@@ -10,7 +10,7 @@ export default class HolbertonClass {
 
   set size(value) {
     if (typeof value === 'number') {
-      this._name = value;
+      this._size = value;
     } else {
       throw TypeError('name must be a number');
     }
@@ -22,7 +22,7 @@ export default class HolbertonClass {
 
   set location(value) {
     if (typeof value === 'string') {
-      this._name = value;
+      this._location = value;
     } else {
       throw TypeError('name must be a string');
     }
@@ -32,7 +32,7 @@ export default class HolbertonClass {
     return this.size;
   }
 
-  get [Symbol.toStringTag]() {
+  toString() {
     return this.location;
   }
 }
