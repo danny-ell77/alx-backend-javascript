@@ -1,34 +1,26 @@
-const readDatabase = require('../utils');
+import readDatabase from "../utils";
 
-class StudentsController {
+export default class StudentsController{
     static getAllStudents(request, response) {
-        response.statusCode = 200;
-        response.setHeader('Content-Type', 'text/plain');
-        response.write('This is the list of our students\n');
+        let report = "This is the list of our students\n";
         readDatabase('./database.csv').then((data) => {
-            response.write(`Number of students in CS: ${data['CS'].length}. List: ${data['CS'].join(', ')}\n`);
-            response.write(`Number of students in SWE: ${data['SWE'].length}. List: ${data['SWE'].join(', ')}\n`);
-            response.end();
-        }).catch((err) => res.write(err.message))
-        .finally(() => {
-          res.end();
-        });
+            for (const [field, group] of Object.entries(data)) {
+                report += `Number of students in ${field}:  ${group.length}. List: ${group.join(', ')}\n`;
+            }
+            response.statusCode = 200
+            response.write(report)
+            response.end()
+        }).catch((error) => response.send(error.message))
     }
     static getAllStudentsByMajor(request, response) {
-        response.statusCode = 200;
-        response.setHeader('Content-Type', 'text/plain');
-        let { major } = request.params;
-        if (major !== 'CS' && major !== 'SWE') {
-            response.statusCode = 500;
-            response.write('Major parameter must be CS or SWE\n');
-            response.end();
-            return;
+        const major = request.params.major;
+        if (!['CS', 'SWE'].includes(major)) {
+            return response.send(500, `Major must be CS or SWE`)
         }
         readDatabase('./database.csv').then((data) => {
-            response.write(`List: ${data[major].join(', ')}\n`);
-            response.end();
-        }).catch((err) => response.send(err.message));
+            const group = data[major]
+            const report = `Number of students in ${major}:  ${group.length}. List: ${group.join(', ')}\n`;
+            response.send(200, report)
+        }).catch((error) => response.send(error.message))
     }
 }
-
-export default StudentsController;
