@@ -1,38 +1,42 @@
-const fs = require('fs');
+import fs from 'fs';
 
 
-export default function readDatabase(dbPath) {
-     return new Promise((resolve, reject) => {
-        fs.readFile(dbPath, 'utf-8', (error, data) => {
-            if (error || !data) {
-                return reject(new Error('Cannot load the database'));
-            }
-            const csvData = data.split('\n').map((item) => item.split('\r')[0]);
-            let cols = csvData[0];
-            const records = csvData.slice(1);
-            cols = cols.split(',');
+const readDatabase = (dataPath) => new Promise((resolve, reject) => {
+  if (!dataPath) {
+    reject(new Error('Cannot load the database'));
+  }
+  if (dataPath) {
+    fs.readFile(dataPath, (err, data) => {
+      if (err) {
+        reject(new Error('Cannot load the database'));
+      }
+      if (data) {
+        const fileLines = data
+          .toString('utf-8')
+          .trim()
+          .split('\n');
+        const studentGroups = {};
+        const dbFieldNames = fileLines[0].split(',');
+        const studentPropNames = dbFieldNames
+          .slice(0, dbFieldNames.length - 1);
 
-            // Transform csvDB to a JS supported data stricture; a list of Objects
-            const recordsList = records.map((line) => {
-                const record = {};
-                const values = line.split(',');
-                for (let i = 0; i < cols.length; i++) {
-                    record[cols[i]] = values[i];
-                }
-                return record;
-            });
+        for (const line of fileLines.slice(1)) {
+          const studentRecord = line.split(',');
+          const studentPropValues = studentRecord
+            .slice(0, studentRecord.length - 1);
+          const field = studentRecord[studentRecord.length - 1];
+          if (!Object.keys(studentGroups).includes(field)) {
+            studentGroups[field] = [];
+          }
+          const studentEntries = studentPropNames
+            .map((propName, idx) => [propName, studentPropValues[idx]]);
+          studentGroups[field].push(Object.fromEntries(studentEntries));
+        }
+        resolve(studentGroups);
+      }
+    });
+  }
+});
 
-            // create a field - list of students mapping for representation
-            const fieldMap = {};
-            for (const item of recordsList) {
-                const group = fieldMap[item.field];
-                if (!group) {
-                    fieldMap[item.field] = [item.firstname];
-                } else {
-                    fieldMap[item.field].push(item.firstname);
-                }
-            }
-            resolve(fieldMap);
-        })
-    })
-}
+export default readDatabase;
+module.exports = readDatabase;
